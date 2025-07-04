@@ -295,9 +295,6 @@ export default function Home() {
               alignItems: "center",
             }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              {xml2Name}
-            </Typography>
 
             <IconButton onClick={() => setCollapsedRight(!collapsedRight)}>
               {collapsedRight ? (
@@ -306,6 +303,9 @@ export default function Home() {
                 <KeyboardDoubleArrowRightIcon />
               )}
             </IconButton>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+              {xml2Name}
+            </Typography>
           </Grid>
         </Grid>
 
