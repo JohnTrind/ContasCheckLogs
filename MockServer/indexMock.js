@@ -27,8 +27,8 @@ app.get('/', (req, res) => {
 app.get('/getGecoLog', (req, res) => {
   const { procnumber, bank } = req.query;
   res.send([
-    { dir: `\\\\mockpath\\GECO\\${bank}\\${procnumber.slice(0, 3)}\\${procnumber.slice(3, 6)}`, fileName: 'GECO_log1.txt' },
-    { dir: `\\\\mockpath\\GECO\\${bank}\\${procnumber.slice(0, 3)}\\${procnumber.slice(3, 6)}`, fileName: 'GECO_log2.txt' },
+    { date: '20250624', dir: `\\\\mockpath\\GECO\\${bank}\\${procnumber.slice(0, 3)}\\${procnumber.slice(3, 6)}`, fileName: 'GECO_log1.txt' },
+    { date: '20250623', dir: `\\\\mockpath\\GECO\\${bank}\\${procnumber.slice(0, 3)}\\${procnumber.slice(3, 6)}`, fileName: 'GECO_log2.txt' },
   ]);
 });
 

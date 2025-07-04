@@ -1,23 +1,61 @@
 "use client";
 
-import { useState } from "react";
-import styles from "./page.module.css";
+import { useState, useMemo } from "react";
+import {
+  Box,
+  Button,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Typography,
+  CssBaseline,
+  ButtonGroup,
+  Autocomplete,
+  AppBar,
+  Toolbar,
+  IconButton,
+  Drawer,
+  Grid,
+} from "@mui/material";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 import XMLViewer from "react-xml-viewer";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import MenuIcon from "@mui/icons-material/Menu";
+import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
+import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
 
 export default function Home() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [bank, setBank] = useState("0033");
   const [procnumber, setProcnumber] = useState("");
   const [xml1, setXml1] = useState("");
   const [xml2, setXml2] = useState("");
-  const [xml1Name, setXml1Name] = useState("XML 1:");
-  const [xml2Name, setXml2Name] = useState("XML 2:");
+  const [xml1Name, setXml1Name] = useState("");
+  const [xml2Name, setXml2Name] = useState("");
   const [items, setItems] = useState([]);
   const [collapsedLeft, setCollapsedLeft] = useState(false);
   const [collapsedRight, setCollapsedRight] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
-  const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: darkMode ? "dark" : "light",
+        },
+      }),
+    [darkMode]
+  );
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const formatXML = (xmlString) => {
     try {
@@ -51,6 +89,7 @@ export default function Home() {
       );
       const data = await res.json();
       setItems(data);
+      setSidebarOpen(true);
     } catch (e) {
       console.error(e);
     } finally {
@@ -70,9 +109,9 @@ export default function Home() {
 
       setXml1(request ? request.xml : "No REQUEST XML found");
       setXml2(response ? response.xml : "No RESPONSE XML found");
-      setXml1Name(`XML 1: ${request?.fileName || "N/A"}`);
-      setXml2Name(`XML 2: ${response?.fileName || "N/A"}`);
-      setSidebarCollapsed(true);
+      setXml1Name(`${request?.fileName || "N/A"}`);
+      setXml2Name(`${response?.fileName || "N/A"}`);
+      setSidebarOpen(false);
     } catch (e) {
       console.error(e);
     } finally {
@@ -83,100 +122,231 @@ export default function Home() {
   const clearXML = () => {
     setXml1("");
     setXml2("");
-    setXml1Name("XML 1:");
-    setXml2Name("XML 2:");
+    setXml1Name("");
+    setXml2Name("");
   };
 
+  const xmlviewerTheme = {
+    textColor: "#355691",
+    attributeValueColor: "#413F54",
+    tagColor: "#5F5AA2",
+    separatorColor: "#30292F",
+    lineNumberBackground: "#355691",
+  };
+
+  const bankOptions = [
+    { code: "0033", label: "MBCP" },
+    { code: "0023", label: "AB" },
+  ];
+
   return (
-    <div className={styles.page}>
-      {loading && (
-        <div className={styles.loading}>
-          <div className={styles.spinner}></div>
-        </div>
-      )}
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AppBar position="static" color="default" elevation={1}>
+        <Toolbar sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+          <IconButton color="inherit" onClick={toggleSidebar}>
+            <MenuIcon />
+          </IconButton>
 
-      <div
-        className={sidebarCollapsed ? styles.sidebarCollapsed : styles.sidebar}
-      >
-        {items.map((item, idx) => (
-          <><div
-            key={idx}
-            className={styles.sidebarItem}
-            onClick={() => loadXMLPair(item.fileName, item.dir)}
-          >
-            {item.fileName}
-          </div></>
-          
-        ))}
-      </div>
-
-      <main className={styles.main}>
-        <div className={styles.inputs}>
-          <input
-            placeholder="Bank"
-            value={bank}
-            onChange={(e) => setBank(e.target.value)}
+          <Autocomplete
+            options={bankOptions}
+            getOptionLabel={(option) => option.label}
+            value={bankOptions.find((opt) => opt.code === bank) || null}
+            onChange={(event, newValue) => {
+              setBank(newValue ? newValue.code : "");
+            }}
+            renderInput={(params) => (
+              <TextField {...params} label="Bank" size="small" />
+            )}
+            sx={{ minWidth: 200 }}
           />
-          <input
-            placeholder="ProcNumber"
+
+          <TextField
+            label="ProcNumber"
             value={procnumber}
+            size="small"
             onChange={(e) => setProcnumber(e.target.value)}
           />
-          <button onClick={() => fetchData("getGecoLog")}>Search GECO</button>
-          <button onClick={() => fetchData("getBalcLog")}>Search BALC</button>
-          <button onClick={toggleSidebar}>Toggle Sidebar</button>
-          <button onClick={clearXML}>Clear</button>
-        </div>
-        <div className={styles.xmlContainer}>
-          <div className={styles.controlGroup}>
-            <span>{xml1Name}</span>
-            <button onClick={() => setCollapsedLeft(!collapsedLeft)}>
-              {collapsedLeft ? "Expand Request" : "Collapse Request"}
-            </button>
-            
-          </div>
 
-          <div className={styles.controlGroup}>
-            <button onClick={() => setCollapsedRight(!collapsedRight)}>
-              {collapsedRight ? "Expand Response" : "Collapse Response"}
-            </button>
-            <span>{xml2Name}</span>
-          </div>
-        </div>
+          <ButtonGroup variant="contained">
+            <Button onClick={() => fetchData("getGecoLog")}>Search GECO</Button>
+            <Button onClick={() => fetchData("getBalcLog")}>Search BALC</Button>
+          </ButtonGroup>
 
-        <div className={styles.xmlContainer}>
-          <div></div>
-          {!collapsedLeft && (
-            <div
-              className={styles.xmlViewerWrapper}
-              style={{ width: collapsedRight ? "100%" : "50%" }}
+          {/* This Box pushes the right buttons to the end */}
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Button variant="outlined" color="secondary" onClick={clearXML}>
+            Clear
+          </Button>
+          <IconButton color="inherit" onClick={() => setDarkMode(!darkMode)}>
+            {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+
+      <Drawer anchor="left" open={sidebarOpen} onClose={toggleSidebar}>
+        <Box>
+          <TableContainer component={Paper}>
+            <Table size="small" stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: "bold" }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Dir</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>File Name</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {items.map((item, idx) => (
+                  <TableRow
+                    key={idx}
+                    hover
+                    sx={{
+                      cursor: "pointer",
+                      "&:hover": { backgroundColor: "action.hover" },
+                    }}
+                    onClick={() => loadXMLPair(item.fileName, item.dir)}
+                  >
+                    <TableCell>{item.date}</TableCell>
+                    <TableCell>{item.dir}</TableCell>
+                    <TableCell>{item.fileName}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </Drawer>
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+          height: "calc(100vh - 64px)",
+        }}
+      >
+        {loading && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 64,
+              left: 0,
+              width: "100%",
+              height: "calc(100% - 64px)",
+              bgcolor: "rgba(255, 255, 255, 0.7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 10,
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        )}
+
+        <Grid
+          container
+          direction="row"
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Grid
+            container
+            direction="row"
+            sx={{
+              justifyContent: "flex-start",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+              {xml1Name}
+            </Typography>
+
+            <IconButton onClick={() => setCollapsedLeft(!collapsedLeft)}>
+              {collapsedLeft ? (
+                <KeyboardDoubleArrowRightIcon />
+              ) : (
+                <KeyboardDoubleArrowLeftIcon />
+              )}
+            </IconButton>
+          </Grid>
+
+          {collapsedLeft && collapsedRight ? (
+            <Button
+              size="small"
+              onClick={() => {
+                setCollapsedLeft(false), setCollapsedRight(false);
+              }}
             >
-              <div className={styles.xmlViewer}>
-                <XMLViewer
-                  xml={xml1}
-                  collapsible={true}
-                  showLineNumbers={true}
-                />
-              </div>
-            </div>
+              Expand All
+            </Button>
+          ) : (
+            <></>
+          )}
+
+          <Grid
+            container
+            direction="row"
+            sx={{
+              justifyContent: "flex-end",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+              {xml2Name}
+            </Typography>
+
+            <IconButton onClick={() => setCollapsedRight(!collapsedRight)}>
+              {collapsedRight ? (
+                <KeyboardDoubleArrowLeftIcon />
+              ) : (
+                <KeyboardDoubleArrowRightIcon />
+              )}
+            </IconButton>
+          </Grid>
+        </Grid>
+
+        <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden" }}>
+          {!collapsedLeft && (
+            <Box
+              sx={{
+                flex: collapsedRight ? 1 : 0.5,
+                overflow: "auto",
+                pr: 1,
+                borderRight: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <XMLViewer
+                xml={formatXML(xml1)}
+                collapsible
+                showLineNumbers
+                theme={xmlviewerTheme}
+              />
+            </Box>
           )}
 
           {!collapsedRight && (
-            <div
-              className={styles.xmlViewerWrapper}
-              style={{ width: collapsedLeft ? "100%" : "50%" }}
+            <Box
+              sx={{
+                flex: collapsedLeft ? 1 : 0.5,
+                overflow: "auto",
+                pl: 1,
+              }}
             >
-              <div className={styles.xmlViewer}>
-                <XMLViewer
-                  xml={xml2}
-                  collapsible={true}
-                  showLineNumbers={true}
-                />
-              </div>
-            </div>
+              <XMLViewer
+                xml={formatXML(xml2)}
+                collapsible
+                showLineNumbers
+                theme={xmlviewerTheme}
+              />
+            </Box>
           )}
-        </div>
-      </main>
-    </div>
+        </Box>
+      </Box>
+    </ThemeProvider>
   );
 }
